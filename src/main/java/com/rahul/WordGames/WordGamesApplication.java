@@ -1,4 +1,4 @@
-package com.rahul.WordGames;
+package com.rahul.wordgames;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
