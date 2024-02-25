@@ -38,6 +38,10 @@ public class User implements UserDetails {
         this.friends = friends; 
     }
 
+    public void addFriend(String userId){
+        friends.add(userId);
+    }
+
 
 
     @Override
