@@ -15,8 +15,11 @@ public class FriendRequest {
     private String requesterId;
     private String recipientId;
 
+   
+
     public FriendRequest(String requesterId, String recipientId){
         this.requesterId = requesterId;
         this.recipientId = recipientId;
+    
     }
 }

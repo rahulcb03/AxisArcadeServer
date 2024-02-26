@@ -1,5 +1,6 @@
 package com.rahul.wordgames.repos;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.bson.types.ObjectId;
@@ -12,6 +13,8 @@ import com.rahul.wordgames.entities.FriendRequest;
 public interface FriendRequestRepository extends MongoRepository<FriendRequest, ObjectId> {
     
     Optional<FriendRequest> findByRequesterIdAndRecipientId(String requesterId, String recipientId);
+
+    List<FriendRequest> findFriendRequestByRecipientId(String recipientId);
     
 
 }
