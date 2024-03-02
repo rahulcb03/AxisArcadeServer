@@ -26,20 +26,16 @@ public class User implements UserDetails {
     private String username; 
     private String password;
     private String email;  
-    private List<String> friends; 
+    
     
 
 
-    public User( String username, String password, String email, ArrayList<String> friends){
+    public User( String username, String password, String email){
         
         this.username = username; 
         this.password = password; 
         this.email = email; 
-        this.friends = friends; 
-    }
-
-    public void addFriend(String userId){
-        friends.add(userId);
+        
     }
 
 

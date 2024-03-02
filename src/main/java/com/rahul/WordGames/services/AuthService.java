@@ -40,8 +40,8 @@ public class AuthService{
         User user = new User(
             signUpRequest.getUsername(),
             passwordEncoder.encode(signUpRequest.getPassword()), 
-            signUpRequest.getEmail(), 
-            new ArrayList<String>()
+            signUpRequest.getEmail()
+            
         );
 
         userRepository.insert(user);
