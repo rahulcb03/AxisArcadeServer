@@ -22,7 +22,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("api/v1/freind-request")
+@RequestMapping("api/v1/friend-request")
 @RequiredArgsConstructor
 @CrossOrigin
 public class FriendRequestController {

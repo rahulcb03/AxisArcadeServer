@@ -2,11 +2,14 @@ package com.rahul.wordgames.websocket;
 
 
 import java.io.IOException;
+import java.security.Principal;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.stereotype.Component;
+import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
@@ -20,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 public class MyHandler extends TextWebSocketHandler {
     
     private final GameService gameService; 
+    private final Map<String, WebSocketSession> sessions = new HashMap<>(); 
 
     @Override
     public void handleTextMessage(WebSocketSession session, TextMessage message) throws IOException, JSONException {
@@ -39,7 +43,19 @@ public class MyHandler extends TextWebSocketHandler {
             case "quit":
                 gameService.handleQuit(session, jsonMessage.getJSONObject("payload"));
                 break;
-                            
+            
+            case "invite":
+                WebSocketSession recipSession = sessions.get(jsonMessage.getJSONObject("payload").getString("recipUsername"));
+                
+                gameService.handleInvite(session, recipSession, jsonMessage.getJSONObject("payload"));
+                break; 
+            
+            case "accept":
+                gameService.handleAccept(session, jsonMessage.getJSONObject("payload"));
+                break;
+            case "decline":
+                gameService.handleDecline(session, jsonMessage.getJSONObject("payload"));
+                break;
             
         }
 
@@ -48,7 +64,20 @@ public class MyHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
-        // Logic to execute after connection is established
-        System.out.println("Connection established with session: " + session.getId());
+        String username = session.getPrincipal().getName();
+
+        sessions.put(username, session);
+        System.out.println("Connection established with: " + username);
+
+
+    }
+
+    @Override
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus ){
+        String username = session.getPrincipal().getName();
+
+        sessions.remove(username);
+        System.out.println("Connection closed with session: " + username);
+
     }
 }

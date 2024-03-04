@@ -56,16 +56,16 @@ public class GameService {
     private void startMatch(Player player1, Player player2) throws IOException {
         String gameId = UUID.randomUUID().toString();
         sessions.put(gameId, new ConnectFour(player1, player2));
-        sendStartGameMessage(player1, player2, gameId, "red");
-        sendStartGameMessage(player2, player1, gameId, "yellow");
+        sendStartGameMessage(player1, player2, gameId);
+        sendStartGameMessage(player2, player1, gameId);
     }
 
-    private void sendStartGameMessage(Player player, Player opponent, String gameId, String color) throws IOException {
+    private void sendStartGameMessage(Player player, Player opponent, String gameId) throws IOException {
         JSONObject json = new JSONObject();
         json.put("type", "started");
         json.put("gameId", gameId);
         json.put("opponentName", opponent.getUsername());
-        json.put("color", color);
+        json.put("color", player.getColor()=='R' ? "red" : "yellow");
         player.getSocket().sendMessage(new TextMessage(json.toString()));
     }
 
@@ -79,20 +79,27 @@ public class GameService {
     public void handleMove(WebSocketSession session, JSONObject jsonObject) throws IOException  {
         
         ConnectFour game = sessions.get(jsonObject.get("gameId"));
-
-        if(game.move(jsonObject.getInt("column"), jsonObject.getString("usedId"))) {
+        
+        if(game == null){
+            sendGameOver(session, "Game was terminated");
+            return;
+        }
+        Player player = game.getCurrentPlayer();
+        if(game.move(jsonObject.getInt("column"), jsonObject.getString("userId"))) {
             sendMovedMessage(game);
-            if(game.checkForWin()){
+            if(game.checkForWin(player.getColor())){
                 sendGameOver(session, "You Win");
                 sendGameOver(game.getCurrentPlayer().getSocket(), "You Lose");
 
                 sessions.remove(jsonObject.get("gameId"));
+                return;
             }
             else{
                 if(game.isGameOver()){
                     sendGameOver(session, "Draw Game");
                     sendGameOver(game.getCurrentPlayer().getSocket(), "Draw Game");
                     sessions.remove(jsonObject.get("gameId"));
+                    return;
                 }
             }
         }
@@ -108,7 +115,7 @@ public class GameService {
         jsonObject.put("message", string);
         
         session.sendMessage(new TextMessage(jsonObject.toString()));
-        session.close();
+        
     }
 
     private void sendMovedMessage(ConnectFour game) throws IOException{
@@ -153,6 +160,57 @@ public class GameService {
         }
 
         sessions.remove(jsonObject.getString("gameId"));
+    }
+
+    public void handleInvite(WebSocketSession session, WebSocketSession recipSession, JSONObject payload) throws IOException {
+        JSONObject jsonObject = new JSONObject();
+        if(recipSession == null){
+            jsonObject.put("type", "invalid");
+            jsonObject.put("message", "player is not active");
+            session.sendMessage(new TextMessage(jsonObject.toString()));
+            return;
+        }
+
+        Player player1 = createPlayerFromJson(payload, session);
+
+        ConnectFour connectFour = new ConnectFour(player1);
+
+        String gameId = UUID.randomUUID().toString();
+        sessions.put(gameId , connectFour);
+
+        sendWaitMessage(player1);
+
+        jsonObject.put("type", "invited");
+        jsonObject.put("senderUsername", player1.getUsername());
+        jsonObject.put("gameId", gameId);
+
+        recipSession.sendMessage(new TextMessage(jsonObject.toString()));
+    }
+
+    public void handleAccept(WebSocketSession session, JSONObject payload) throws IOException{
+        ConnectFour game = sessions.get(payload.getString("gameId"));
+        if(game == null){
+            sendGameOver(session, "Game was terminated");
+            return;
+        }
+        Player player2 = createPlayerFromJson(payload, session);
+        game.setPlayer2(player2);
+
+        sendStartGameMessage(game.getRedPlayer(), game.getYellowPlayer(), payload.getString("gameId"));
+        sendStartGameMessage(game.getYellowPlayer(), game.getRedPlayer(), payload.getString("gameId"));
+
+    }
+
+    public void handleDecline(WebSocketSession session, JSONObject payload) throws IOException{
+        ConnectFour game = sessions.get(payload.getString("gameId"));
+        if(game == null){
+            sendGameOver(session, "Game was terminated");
+            return;
+        }
+
+        sendGameOver(game.getRedPlayer().getSocket(), "The invite was declined");
+        
+        sessions.remove(payload.getString("gameId"));
     }
     
 

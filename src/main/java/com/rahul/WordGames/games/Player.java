@@ -11,4 +11,11 @@ public class Player {
     private String userId;
     private String username;
     private WebSocketSession socket; 
+    private char color; 
+
+    public Player(String userId, String username, WebSocketSession socket){
+        this.userId = userId;
+        this.username = username;
+        this.socket = socket;
+    }
 }
