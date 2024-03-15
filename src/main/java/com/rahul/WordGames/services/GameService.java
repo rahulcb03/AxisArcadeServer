@@ -1,6 +1,7 @@
 package com.rahul.wordgames.services;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -25,11 +26,20 @@ public class GameService {
     private final UserRepository userRepository;
     private final ConcurrentHashMap<String, ConnectFour> sessions = new ConcurrentHashMap<>();
     private final ConcurrentLinkedQueue<Player> matchMakingQueue = new ConcurrentLinkedQueue<>();
+    private final ConcurrentHashMap<String, String> activeUsers = new ConcurrentHashMap<>(); 
     
 
     public void handleStart(WebSocketSession socket, JSONObject jsonObject) throws IOException {
+
+        if(activeUsers.containsKey(jsonObject.getString("userId"))){
+            jsonObject.put("type", "invalid");
+            jsonObject.put("message", "cancel current session to join queue again");
+            socket.sendMessage(new TextMessage(jsonObject.toString()));
+            return;
+        }
         Player player = createPlayerFromJson(jsonObject, socket);
         matchMakingQueue.add(player);
+        activeUsers.put(jsonObject.getString("userId"), "active");
         if (!checkAndStartMatchIfPossible() ) 
             sendWaitMessage(player);
     }
@@ -92,6 +102,8 @@ public class GameService {
                 sendGameOver(game.getCurrentPlayer().getSocket(), "You Lose");
 
                 sessions.remove(jsonObject.get("gameId"));
+                activeUsers.remove(game.getRedPlayer().getUserId());
+                activeUsers.remove(game.getYellowPlayer().getUserId());
                 return;
             }
             else{
@@ -99,6 +111,8 @@ public class GameService {
                     sendGameOver(session, "Draw Game");
                     sendGameOver(game.getCurrentPlayer().getSocket(), "Draw Game");
                     sessions.remove(jsonObject.get("gameId"));
+                    activeUsers.remove(game.getRedPlayer().getUserId());
+                    activeUsers.remove(game.getYellowPlayer().getUserId());
                     return;
                 }
             }
@@ -128,6 +142,7 @@ public class GameService {
         jsonObject.put("playerName", current.equals(player1) ? player2.getUsername() : player1.getUsername() );
         jsonObject.put("color", current.equals(player1) ? "yellow" : "red" );
         jsonObject.put("column", game.getRecentMove() );
+        jsonObject.put("board", game.getBoard());
 
         player1.getSocket().sendMessage(new TextMessage(jsonObject.toString()));
         player2.getSocket().sendMessage(new TextMessage(jsonObject.toString()));
@@ -154,19 +169,36 @@ public class GameService {
         
         if(player1.getSocket().equals(session)){
             sendGameOver(player2.getSocket(), player1.getUsername() + " has quit");
+            sendGameOver(player1.getSocket(), player1.getUsername() + " has quit");
         }
         else{
             sendGameOver(player1.getSocket(), player2.getUsername() + " has quit");
+            sendGameOver(player2.getSocket(), player2.getUsername() + " has quit");
         }
 
         sessions.remove(jsonObject.getString("gameId"));
+        activeUsers.remove(game.getRedPlayer().getUserId());
+        activeUsers.remove(game.getYellowPlayer().getUserId());
     }
 
     public void handleInvite(WebSocketSession session, WebSocketSession recipSession, JSONObject payload) throws IOException {
         JSONObject jsonObject = new JSONObject();
+        if(activeUsers.containsKey(userRepository.findUserByUsername(payload.getString("recipUsername")).orElseThrow().getId())){
+            jsonObject.put("type", "invalid");
+            jsonObject.put("message", payload.getString("recipUsername")+ " is in a game");
+            session.sendMessage(new TextMessage(jsonObject.toString()));
+            return; 
+        }
+
+        if(activeUsers.containsKey(payload.getString("userId"))){
+            jsonObject.put("type", "invalid");
+            jsonObject.put("message", "cancel current session to send an invite");
+            session.sendMessage(new TextMessage(jsonObject.toString()));
+            return;
+        }
         if(recipSession == null){
             jsonObject.put("type", "invalid");
-            jsonObject.put("message", "player is not active");
+            jsonObject.put("message", payload.getString("recipUsername")+" is not active");
             session.sendMessage(new TextMessage(jsonObject.toString()));
             return;
         }
@@ -179,6 +211,7 @@ public class GameService {
         sessions.put(gameId , connectFour);
 
         sendWaitMessage(player1);
+        activeUsers.put(payload.getString("userId"), "active");
 
         jsonObject.put("type", "invited");
         jsonObject.put("senderUsername", player1.getUsername());
@@ -189,6 +222,7 @@ public class GameService {
 
     public void handleAccept(WebSocketSession session, JSONObject payload) throws IOException{
         ConnectFour game = sessions.get(payload.getString("gameId"));
+
         if(game == null){
             sendGameOver(session, "Game was terminated");
             return;
@@ -212,6 +246,41 @@ public class GameService {
         
         sessions.remove(payload.getString("gameId"));
     }
+
+    public void handleCancel( WebSocketSession disconnectingSession, String userId) throws IOException{
+        if(activeUsers.containsKey(userId))
+            activeUsers.remove(userId);
+
+        matchMakingQueue.removeIf(player -> player.getUserId().equals(userId));
+
+        String gameIdToRemove = null;
+        for (Map.Entry<String, ConnectFour> entry : sessions.entrySet()) {
+            ConnectFour game = entry.getValue();
+            if (game.getRedPlayer().getUserId().equals(userId) || game.getYellowPlayer().getUserId().equals(userId)) {
+                if (game.getRedPlayer().getSocket().isOpen() && !game.getRedPlayer().getSocket().equals(disconnectingSession)) {
+                    sendGameOver(game.getRedPlayer().getSocket(), "Opponent has disconnected");
+                }
+                // Check if the yellow player's session is open and not the disconnecting session
+                if (game.getYellowPlayer().getSocket().isOpen() && !game.getYellowPlayer().getSocket().equals(disconnectingSession)) {
+                    sendGameOver(game.getYellowPlayer().getSocket(), "Opponent has disconnected");
+                }
+                gameIdToRemove = entry.getKey();
+                break; // Stop searching once the game is found
+            }
+        }
+    
+        // Remove the game from the sessions map if it was found
+        if (gameIdToRemove != null) {
+            sessions.remove(gameIdToRemove);
+        
+        }
+    }
+
+    
+    public void handleCancelUsername(WebSocketSession session, String username) throws IOException{
+        handleCancel(session, userRepository.findUserByUsername(username).orElseThrow().getId());
+    }
+
     
 
 }

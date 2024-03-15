@@ -28,7 +28,7 @@ public class ConnectFour {
         players.put('R', player1);
         players.put('Y', player2);
         player1.setColor('R');
-        player1.setColor('Y');
+        player2.setColor('Y');
         
 
         for(int x=0; x<board.length; x++)
@@ -53,7 +53,7 @@ public class ConnectFour {
         if(players.size()!= 2)
             return false; 
         //gaurd to make sure colum is in bounds
-        if(column >= board[0].length){
+        if(column >= board[0].length || column<0){
             return false; 
         }
 
@@ -62,7 +62,7 @@ public class ConnectFour {
         }
 
         //traversefind the first open index
-        for(int x=0; x<board.length; x++){
+        for(int x=board.length-1; x>=0; x--){
 
             if(board[x][column] == '.'){
                 board[x][column] = currentPlayer;

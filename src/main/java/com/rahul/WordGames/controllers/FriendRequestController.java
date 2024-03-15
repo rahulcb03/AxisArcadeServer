@@ -30,7 +30,7 @@ public class FriendRequestController {
     private final JwtService jwtService; 
     private final FriendRequestService friendRequestService; 
 
-    @GetMapping("/")
+    @GetMapping("")
     public ResponseEntity<List<Details>> incomingFriendRequests(HttpServletRequest request){
         String jwt = jwtService.extractToken(request);
         String username = jwtService.extractUsername(jwt);

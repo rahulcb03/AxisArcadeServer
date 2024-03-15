@@ -56,6 +56,9 @@ public class MyHandler extends TextWebSocketHandler {
             case "decline":
                 gameService.handleDecline(session, jsonMessage.getJSONObject("payload"));
                 break;
+            case "cancel":
+                gameService.handleCancel(session, jsonMessage.getJSONObject("payload").getString("userId"));
+                break;
             
         }
 
@@ -73,10 +76,10 @@ public class MyHandler extends TextWebSocketHandler {
     }
 
     @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus ){
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus ) throws IOException{
         String username = session.getPrincipal().getName();
-
-        sessions.remove(username);
+        gameService.handleCancelUsername(session, username);
+        
         System.out.println("Connection closed with session: " + username);
 
     }

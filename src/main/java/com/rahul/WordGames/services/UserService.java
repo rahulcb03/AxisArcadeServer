@@ -6,6 +6,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import com.rahul.wordgames.dto.UserProfile;
 import com.rahul.wordgames.entities.User;
 import com.rahul.wordgames.repos.UserRepository;
 
@@ -32,6 +33,14 @@ public class UserService{
 
     public User getUser(String username){
         return userRepository.findUserByUsername(username).orElseThrow();
+    }
+
+    public UserProfile createProfile(String username) {
+        User user = userRepository.findUserByUsername(username).orElseThrow();
+
+        return new UserProfile(user.getId(), username);
+
+        
     }
 
 
