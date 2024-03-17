@@ -1,6 +1,7 @@
 package com.rahul.wordgames.entities;
 
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -27,6 +28,7 @@ public class User implements UserDetails {
     private String password;
     private String email;  
     private String resetToken; 
+    private Instant resetTimeStamp; 
     
     
 

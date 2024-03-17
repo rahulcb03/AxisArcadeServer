@@ -14,12 +14,12 @@ public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
 
-    public void sendPasswordResetEmail(String toEmail, String resetLink) {
+    public void sendPasswordResetEmail(String toEmail, String resetLink, String username) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom("rahulcb03@gmail.com");
         message.setTo(toEmail);
         message.setSubject("Password Reset Request");
-        message.setText("To reset your password, click the link below:\n" + resetLink);
+        message.setText("Username: "+username+"\nTo reset your password, click the link below (expires in 10 minutes):\n" + resetLink);
 
         mailSender.send(message);
     }

@@ -34,8 +34,9 @@ public class SecurityConfiguration {
         http.cors(Customizer.withDefaults())
             .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(request -> request
-                    .requestMatchers("/myHandler").permitAll()
-                    .requestMatchers("/api/v1/**").permitAll()
+                .requestMatchers("/myHandler").permitAll()
+                .requestMatchers("/api/v1/auth/**").permitAll() // No JWT required for /api/v1/auth/**
+                .requestMatchers("/api/v1/**").authenticated()
                     .anyRequest().authenticated())
 
                 .sessionManagement(manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

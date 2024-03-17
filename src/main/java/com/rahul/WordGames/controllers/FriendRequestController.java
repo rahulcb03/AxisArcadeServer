@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -45,9 +46,12 @@ public class FriendRequestController {
         String jwt = jwtService.extractToken(request);
         String username = jwtService.extractUsername(jwt);
 
-        friendRequestService.sendFriendRequest(username, recipUsername);
+        String response = friendRequestService.sendFriendRequest(username, recipUsername);
 
-        return ResponseEntity.ok().build();
+        if(!response.equals(""))
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+        return ResponseEntity.ok("freind request sent to " + recipUsername);
+        
 
     }
 

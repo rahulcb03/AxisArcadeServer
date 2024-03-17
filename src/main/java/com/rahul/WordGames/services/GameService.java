@@ -29,17 +29,15 @@ public class GameService {
     private final ConcurrentHashMap<String, String> activeUsers = new ConcurrentHashMap<>(); 
     
 
-    public void handleStart(WebSocketSession socket, JSONObject jsonObject) throws IOException {
+    public void handleStart(WebSocketSession socket, JSONObject payload) throws IOException {
 
-        if(activeUsers.containsKey(jsonObject.getString("userId"))){
-            jsonObject.put("type", "invalid");
-            jsonObject.put("message", "cancel current session to join queue again");
-            socket.sendMessage(new TextMessage(jsonObject.toString()));
+        if(activeUsers.containsKey(payload.getString("userId"))){
+            sendInvalidMessage(socket, "cancel current session to join queue again");
             return;
         }
-        Player player = createPlayerFromJson(jsonObject, socket);
+        Player player = createPlayerFromJson(payload, socket);
         matchMakingQueue.add(player);
-        activeUsers.put(jsonObject.getString("userId"), "active");
+        activeUsers.put(payload.getString("userId"), "active");
         if (!checkAndStartMatchIfPossible() ) 
             sendWaitMessage(player);
     }
@@ -118,7 +116,7 @@ public class GameService {
             }
         }
         else{
-            sendInvalidMessage(game);
+            sendInvalidMessage(session, "move is invalid");
         }
     }
 
@@ -149,19 +147,26 @@ public class GameService {
 
     }
 
-    private void sendInvalidMessage(ConnectFour game) throws IOException{
-        Player player = game.getCurrentPlayer();
+    private void sendInvalidMessage(WebSocketSession session, String msg) throws IOException{
+        
 
         JSONObject jsonObject = new JSONObject();
 
         jsonObject.put("type", "invalid");
-        jsonObject.put("message", "move is Invalid");
+        jsonObject.put("message", msg);
 
-        player.getSocket().sendMessage(new TextMessage(jsonObject.toString()));
+        session.sendMessage(new TextMessage(jsonObject.toString()));
     }
 
     public void handleQuit(WebSocketSession session, JSONObject jsonObject) throws IOException {
+
+
         ConnectFour game = sessions.get(jsonObject.getString("gameId"));
+        if(game == null){
+            sendGameOver(session, "Game was terminated");
+            return;
+        }
+
 
         Player player1 = game.getRedPlayer();
         Player player2 = game.getYellowPlayer();
@@ -184,22 +189,18 @@ public class GameService {
     public void handleInvite(WebSocketSession session, WebSocketSession recipSession, JSONObject payload) throws IOException {
         JSONObject jsonObject = new JSONObject();
         if(activeUsers.containsKey(userRepository.findUserByUsername(payload.getString("recipUsername")).orElseThrow().getId())){
-            jsonObject.put("type", "invalid");
-            jsonObject.put("message", payload.getString("recipUsername")+ " is in a game");
-            session.sendMessage(new TextMessage(jsonObject.toString()));
+            sendInvalidMessage(session, payload.getString("recipUsername")+ " is in a game");
+            
             return; 
         }
 
         if(activeUsers.containsKey(payload.getString("userId"))){
-            jsonObject.put("type", "invalid");
-            jsonObject.put("message", "cancel current session to send an invite");
-            session.sendMessage(new TextMessage(jsonObject.toString()));
+            sendInvalidMessage(session,"cancel current session to send an invite");
             return;
         }
         if(recipSession == null){
-            jsonObject.put("type", "invalid");
-            jsonObject.put("message", payload.getString("recipUsername")+" is not active");
-            session.sendMessage(new TextMessage(jsonObject.toString()));
+            sendInvalidMessage(session, payload.getString("recipUsername")+" is not active");
+            
             return;
         }
 
@@ -245,9 +246,11 @@ public class GameService {
         sendGameOver(game.getRedPlayer().getSocket(), "The invite was declined");
         
         sessions.remove(payload.getString("gameId"));
+        activeUsers.remove(game.getRedPlayer().getUserId());
     }
 
-    public void handleCancel( WebSocketSession disconnectingSession, String userId) throws IOException{
+    public void cleanSessions( WebSocketSession session, String userId) throws IOException{
+        
         if(activeUsers.containsKey(userId))
             activeUsers.remove(userId);
 
@@ -257,11 +260,13 @@ public class GameService {
         for (Map.Entry<String, ConnectFour> entry : sessions.entrySet()) {
             ConnectFour game = entry.getValue();
             if (game.getRedPlayer().getUserId().equals(userId) || game.getYellowPlayer().getUserId().equals(userId)) {
-                if (game.getRedPlayer().getSocket().isOpen() && !game.getRedPlayer().getSocket().equals(disconnectingSession)) {
+                if (game.getRedPlayer().getSocket().isOpen() && !game.getRedPlayer().getSocket().equals(session)) {
+                    activeUsers.remove(game.getRedPlayer().getUserId());
                     sendGameOver(game.getRedPlayer().getSocket(), "Opponent has disconnected");
                 }
                 // Check if the yellow player's session is open and not the disconnecting session
-                if (game.getYellowPlayer().getSocket().isOpen() && !game.getYellowPlayer().getSocket().equals(disconnectingSession)) {
+                if (game.getYellowPlayer()!=null && game.getYellowPlayer().getSocket().isOpen() && !game.getYellowPlayer().getSocket().equals(session)) {
+                    activeUsers.remove(game.getYellowPlayer().getUserId());
                     sendGameOver(game.getYellowPlayer().getSocket(), "Opponent has disconnected");
                 }
                 gameIdToRemove = entry.getKey();
@@ -277,8 +282,15 @@ public class GameService {
     }
 
     
-    public void handleCancelUsername(WebSocketSession session, String username) throws IOException{
-        handleCancel(session, userRepository.findUserByUsername(username).orElseThrow().getId());
+    public void cleanBeforeDC(WebSocketSession session, String username) throws IOException{
+        cleanSessions(session, userRepository.findUserByUsername(username).orElseThrow().getId());
+    }
+
+    public void handleCancel(WebSocketSession session, String userId) throws IOException{
+        cleanSessions(session, userId);
+        JSONObject obj = new JSONObject();
+        obj.put("type", "canceled");
+        session.sendMessage(new TextMessage(obj.toString()));
     }
 
     

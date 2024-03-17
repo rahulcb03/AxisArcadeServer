@@ -78,8 +78,9 @@ public class MyHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus ) throws IOException{
         String username = session.getPrincipal().getName();
-        gameService.handleCancelUsername(session, username);
         
+        gameService.cleanBeforeDC(session, username);
+        sessions.remove(username);
         System.out.println("Connection closed with session: " + username);
 
     }

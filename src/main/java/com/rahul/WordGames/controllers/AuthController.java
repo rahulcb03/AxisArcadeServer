@@ -1,9 +1,11 @@
 package com.rahul.wordgames.controllers;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -11,7 +13,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+
 import org.springframework.web.bind.annotation.RestController;
 
 import com.rahul.wordgames.dto.JwtAuthResponse;
@@ -37,6 +39,10 @@ public class AuthController {
     private final EmailService emailService; 
     private final PasswordEncoder passwordEncoder;
 
+     
+    @Value("${BASE_URL}") String baseUrl;
+
+
     @PostMapping("/signup")
     public ResponseEntity<User> signUp(@RequestBody SignUpRequest signUpRequest){
         Optional<User> user = authenticationService.signup(signUpRequest);
@@ -55,7 +61,7 @@ public class AuthController {
     }
 
     @PostMapping("/request-password-reset")
-    public ResponseEntity<?> requestPasswordReset(@RequestBody HashMap<String, String> payload) {
+    public ResponseEntity<?> requestPasswordReset( @RequestBody HashMap<String, String> payload) {
         // Check if the email exists in the database
         String email = payload.get("email");
         
@@ -70,11 +76,14 @@ public class AuthController {
         // Save or update the reset token associated with the user in the database
         User user = userOptional.get();
         user.setResetToken(resetToken);
+        user.setResetTimeStamp(Instant.now());
         userRepository.save(user);
 
         // Send an email to the user with the reset token, ideally as a link they can click
-        String resetLink = "http://localhost:3000/reset-password?token=" + resetToken;
-        emailService.sendPasswordResetEmail(user.getEmail(), resetLink);
+        
+
+        String resetLink = baseUrl + "/reset-password?token=" + resetToken;
+        emailService.sendPasswordResetEmail(user.getEmail(), resetLink, user.getUsername());
 
         return ResponseEntity.ok("Password reset email sent");
     }
@@ -85,12 +94,21 @@ public class AuthController {
         String token = payload.get("token");
         String newPassword = payload.get("newPassword");
         Optional<User> userOptional = userRepository.findUserByResetToken(token);
-        if (!userOptional.isPresent()) {
+        
+        if (!userOptional.isPresent() || token == null) {
             return ResponseEntity.badRequest().body("Invalid token");
         }
 
         // Update the user's password and clear the reset token
         User user = userOptional.get();
+
+        if (user.getResetTimeStamp() == null || 
+            user.getResetTimeStamp().isBefore(Instant.now().minusSeconds(600))) {
+            user.setResetToken(null); // Clear the reset token
+            userRepository.save(user);
+            return ResponseEntity.badRequest().body("Token expired");
+        }
+
         String encodedPassword = passwordEncoder.encode(newPassword);
         user.setPassword(encodedPassword);
         user.setResetToken(null); // Clear the reset token

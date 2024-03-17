@@ -25,19 +25,36 @@ public class FriendRequestService {
     private final UserRepository userRepository; 
     private final FriendRepository friendRepository;
 
-    public void sendFriendRequest(String username, String recipUsername) {
+    public String sendFriendRequest(String username, String recipUsername) {
 
         User requester = userRepository.findUserByUsername(username).orElseThrow();
-        User recipient = userRepository.findUserByUsername(recipUsername).orElseThrow();
+        Optional<User> recip = userRepository.findUserByUsername(recipUsername);
+        User recipient;
+        if(!recip.isPresent()){
+            return ("User not found");
+        }
+        recipient = recip.get();
         //Check if the user has already sent a friend request to the recip
         
+        if(friendRequestRepository.findByRequesterIdAndRecipientId( recipient.getId(), requester.getId()).isPresent()){
+            acceptFriendRequest(username, friendRequestRepository.findByRequesterIdAndRecipientId( recipient.getId(), requester.getId()).orElseThrow().getId());
+            return("You are now friends with "+recipUsername);
+        }
+            
+
         if(friendRequestRepository.findByRequesterIdAndRecipientId(requester.getId(), recipient.getId()).isPresent())
-            return;
+            return("Friend request has already been sent to " + recipUsername);
+
+        if(friendRepository.findFriendByUserId1AndUserId2(requester.getId(), recipient.getId()).isPresent() || 
+        friendRepository.findFriendByUserId1AndUserId2(recipient.getId(), requester.getId()).isPresent()){
+            return("You are already friends with "+ recipUsername); 
+        }
 
         
         FriendRequest friendRequest = new FriendRequest(requester.getId(), recipient.getId());
 
         friendRequestRepository.insert(friendRequest);
+        return("" );
 
     }
 

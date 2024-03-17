@@ -5,9 +5,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.function.Function;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import org.springframework.beans.factory.annotation.Value;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -15,10 +17,16 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
 
+
 @Service
 public class JwtService{
 
-    private static final String sKey = "VTyfe0+7zE5OmuUTghrdaRvHqc0TI4APTOs38F9+ZDwufGwDlmZ7gRUJ+aV0iVub";
+    @Value("${JWT_SECRET_KEY}")
+    private String sKey ;
+
+    public JwtService(@Value("${JWT_SECRET_KEY}") String sKey ){
+        this.sKey= sKey; 
+    }
 
     public String generateToken(UserDetails userdetails){
         return Jwts.builder().setSubject(userdetails.getUsername())
