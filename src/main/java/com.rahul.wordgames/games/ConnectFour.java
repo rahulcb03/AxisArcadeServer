@@ -130,7 +130,7 @@ public class ConnectFour {
     }
 
     public boolean isGameOver(){
-        for(char c: board[board.length-1]){
+        for(char c: board[0]){
             if(c == '.')
                 return false; 
         }

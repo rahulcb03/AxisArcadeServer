@@ -59,10 +59,7 @@ public class MyHandler extends TextWebSocketHandler {
             case "cancel":
                 gameService.handleCancel(session, jsonMessage.getJSONObject("payload").getString("userId"));
                 break;
-            
         }
-
-
     }
 
     @Override
