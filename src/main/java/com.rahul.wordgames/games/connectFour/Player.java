@@ -1,4 +1,4 @@
-package com.rahul.wordgames.games;
+package com.rahul.wordgames.games.connectFour;
 
 import org.springframework.web.socket.WebSocketSession;
 

@@ -1,6 +1,7 @@
 package com.rahul.wordgames.services;
 
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -13,11 +14,10 @@ import com.rahul.wordgames.repos.UserRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
-@RequiredArgsConstructor
 public class UserService{
 
-
-    private final UserRepository userRepository;
+    @Autowired
+    private UserRepository userRepository;
 
     public UserDetailsService userDetailsService(){
         return new UserDetailsService() {

@@ -1,4 +1,6 @@
-package com.rahul.wordgames.games;
+package com.rahul.wordgames.games.connectFour;
+
+import lombok.Getter;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -8,9 +10,11 @@ import java.util.Map;
 public class ConnectFour {
 
 
+    @Getter
     private char[][] board= new char[6][7];
     private char currentPlayer; 
-    private Map<Character, Player> players; 
+    private Map<Character, Player> players;
+    @Getter
     private int recentMove;
      
     public ConnectFour(Player player){
@@ -40,13 +44,6 @@ public class ConnectFour {
             return;
         players.put('Y', player);
         player.setColor('Y');
-    }
-    public int getRecentMove(){
-        return recentMove;
-    }
-
-    public char[][] getBoard(){
-        return board; 
     }
 
     public boolean move(int column, String userId){

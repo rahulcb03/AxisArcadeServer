@@ -12,14 +12,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
-import com.rahul.wordgames.games.ConnectFour;
-import com.rahul.wordgames.games.Player;
+import com.rahul.wordgames.games.connectFour.ConnectFour;
+import com.rahul.wordgames.games.connectFour.Player;
 import com.rahul.wordgames.repos.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
 
-@Service
 @RequiredArgsConstructor
 public class GameService {
 
@@ -159,7 +158,6 @@ public class GameService {
     }
 
     public void handleQuit(WebSocketSession session, JSONObject jsonObject) throws IOException {
-
 
         ConnectFour game = sessions.get(jsonObject.getString("gameId"));
         if(game == null){

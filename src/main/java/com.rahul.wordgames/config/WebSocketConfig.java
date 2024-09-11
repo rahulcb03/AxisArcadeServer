@@ -1,5 +1,11 @@
 package com.rahul.wordgames.config;
 
+import com.rahul.wordgames.websocket.InitialHandler;
+import org.apache.catalina.connector.Connector;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
+import org.springframework.boot.web.servlet.server.ServletWebServerFactory;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
@@ -15,17 +21,19 @@ import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSocket
-@RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketConfigurer {
 
-    private final MyHandler myHandler;
-    private final AuthHandshakeInterceptor authHandshakeInterceptor;
-    private final CustomHandshakeHandler customHandshakeHandler;
+    @Autowired
+    private InitialHandler initialHandler;
+    @Autowired
+    private AuthHandshakeInterceptor authHandshakeInterceptor;
+    @Autowired
+    private CustomHandshakeHandler customHandshakeHandler;
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry
-            .addHandler(myHandler, "/myHandler")
+            .addHandler(initialHandler, "/myHandler")
             .setHandshakeHandler(customHandshakeHandler)
             .addInterceptors(authHandshakeInterceptor)
             .setAllowedOrigins("*");
