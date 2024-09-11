@@ -21,7 +21,7 @@ import jakarta.servlet.http.HttpServletRequest;
 @Service
 public class JwtService{
 
-    @Value("${JWT_SECRET_KEY}")
+    @Value("${jwt.secret.key}")
     private String sKey ;
 
     public JwtService(@Value("${JWT_SECRET_KEY}") String sKey ){

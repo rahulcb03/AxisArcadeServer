@@ -18,7 +18,7 @@ import com.rahul.wordgames.services.GameService;
 
 import lombok.RequiredArgsConstructor;
 
-@Component
+
 @RequiredArgsConstructor
 public class MyHandler extends TextWebSocketHandler {
     
@@ -27,7 +27,6 @@ public class MyHandler extends TextWebSocketHandler {
 
     @Override
     public void handleTextMessage(WebSocketSession session, TextMessage message) throws IOException, JSONException {
-        
         JSONObject jsonMessage = new JSONObject(message.getPayload());
         String command = jsonMessage.getString("type");
 
@@ -67,9 +66,6 @@ public class MyHandler extends TextWebSocketHandler {
         String username = session.getPrincipal().getName();
 
         sessions.put(username, session);
-        System.out.println("Connection established with: " + username);
-
-
     }
 
     @Override
@@ -78,7 +74,5 @@ public class MyHandler extends TextWebSocketHandler {
         
         gameService.cleanBeforeDC(session, username);
         sessions.remove(username);
-        System.out.println("Connection closed with session: " + username);
-
     }
 }

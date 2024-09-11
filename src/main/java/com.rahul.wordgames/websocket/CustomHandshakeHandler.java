@@ -27,14 +27,11 @@ public class CustomHandshakeHandler extends DefaultHandshakeHandler {
     @Override
     protected Principal determineUser(ServerHttpRequest request, WebSocketHandler wsHandler, Map<String, Object> attributes) {
         String token = UriComponentsBuilder.fromUri(request.getURI()).build().getQueryParams().getFirst("token");
-        
-        
 
         if (token != null) {
             try {
                 String username = jwtService.extractUsername(token);
-                
-                
+
                 if (username != null && !username.isEmpty()) {
                     UserDetails userDetails = userService.userDetailsService().loadUserByUsername(username);
                     return new UsernamePasswordAuthenticationToken(userDetails.getUsername(), null, userDetails.getAuthorities());

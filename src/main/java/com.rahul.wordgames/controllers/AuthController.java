@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,17 +31,20 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("api/v1/auth")
-@RequiredArgsConstructor
 @CrossOrigin
 public class AuthController {
 
-    private final AuthService authenticationService; 
-    private final UserRepository userRepository;
-    private final EmailService emailService; 
-    private final PasswordEncoder passwordEncoder;
+    @Autowired
+    private AuthService authenticationService;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private EmailService emailService;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
      
-    @Value("${BASE_URL}") String baseUrl;
+    @Value("${frontend.base.url}") String baseUrl;
 
 
     @PostMapping("/signup")

@@ -2,6 +2,7 @@ package com.rahul.wordgames.config;
 
 import java.io.IOException;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,11 +23,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
 @Component
-@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter{
 
-    private final UserService userService; 
-    private final JwtService jwtService;
+    @Autowired
+    private UserService userService;
+    @Autowired
+    private JwtService jwtService;
 
     @Override
     protected void doFilterInternal(

@@ -32,6 +32,5 @@ build/
 ### VS Code ###
 .vscode/
 
-ec2-user@35.175.228.223
 src/main/resources/.env
 
