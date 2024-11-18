@@ -86,6 +86,7 @@ public class BattleshipHandler implements GameHandler {
         if(battleship.setup(userId,cords,orientations,boats)){
             String readyStatus="";
 
+            // send wait message to player so they have their Ocean board
             JSONObject j = new JSONObject();
             j.put("type", "wait");
             String [][] ocean = battleship.getPlayer1().getUserId().equals(userId) ? battleship.getPlayer1OceanBoard() : battleship.getPlayer2OceanBoard();
@@ -96,6 +97,7 @@ public class BattleshipHandler implements GameHandler {
                 throw new RuntimeException(e);
             }
 
+            //if both players setup that send readyToFire to initiate game
             if(battleship.getPlayer1Setup() && battleship.getPlayer2Setup()){
                 JSONObject jsonObject = new JSONObject();
                 jsonObject.put("type", "readyToFire");
@@ -115,7 +117,7 @@ public class BattleshipHandler implements GameHandler {
     }
 
     private void handleQuit(WebSocketSession session, JSONObject payload, ConcurrentHashMap<String, String> activeUsers) {
-        String gameId =payload.getString("gameId");
+        String gameId = payload.getString("gameId");
         Battleship game = sessions.get(gameId);
         if(game == null){
             helperMethods.sendGameOver(session, "Game was terminated");
